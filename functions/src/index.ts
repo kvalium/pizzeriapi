@@ -20,6 +20,7 @@ app.post('/pizzeria', async (request, response) => {
     const { id, name, slogan } = request.body;
     if (!id) throw new Error('pizzeria ID is required');
     const data = {
+      id,
       name,
       slogan
     }
@@ -27,9 +28,7 @@ app.post('/pizzeria', async (request, response) => {
     await pizzeriaRef.set(data);
     const pizzeria = await pizzeriaRef.get();
 
-    response.json({
-      data: pizzeria.data()
-    });
+    response.json(pizzeria.data());
 
   } catch (error) {
     response.status(500).send(error);
@@ -45,10 +44,7 @@ app.get('/pizzeria/:id', async (request, response) => {
     if (!pizzeria.exists) {
       throw new Error('pizza doesnt exist.')
     }
-    response.json({
-      id: pizzeria.id,
-      data: pizzeria.data()
-    });
+    response.json(pizzeria.data());
   } catch (error) {
     response.status(500).send(error);
   }
@@ -68,9 +64,7 @@ app.post('/pizzeria/:pizzeriaId/pizzas', async (request, response) => {
     await pizzariaRef.collection("pizzas").doc(name).set(data);
     const pizza = await pizzariaRef.collection("pizzas").doc(name).get();
 
-    response.json({
-      data: pizza.data()
-    });
+    response.json(pizza.data());
 
   } catch (error) {
     response.status(500).send(error);
@@ -88,10 +82,7 @@ app.get('/pizzeria/:pizzeriaId/pizzas/:pizzaId', async (request, response) => {
     if (!pizza.exists) {
       throw new Error('pizza doesnt exist.')
     }
-    response.json({
-      id: pizza.id,
-      data: pizza.data()
-    });
+    response.json(pizza.data());
   } catch (error) {
     response.status(500).send(error);
   }
@@ -106,12 +97,7 @@ app.get('/pizzeria/:pizzeriaId/pizzas', async (request, response) => {
     const pizzaQuerySnapshot = await pizzariaRef.collection('pizzas').get();
     const pizzas: any[] = [];
     pizzaQuerySnapshot.forEach(
-      (doc) => {
-        pizzas.push({
-          id: doc.id,
-          data: doc.data()
-        });
-      }
+      (doc) => { pizzas.push(doc.data()); }
     );
     response.json(pizzas);
   } catch (error) {
