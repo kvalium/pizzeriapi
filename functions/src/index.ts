@@ -14,19 +14,61 @@ main.use(bodyParser.json());
 
 export const webApi = functions.https.onRequest(main);
 
-app.post('/pizzas', async (request, response) => {
+// Create a pizzeria
+app.post('/pizzeria', async (request, response) => {
   try {
+    const { id, name, slogan } = request.body;
+    if (!id) throw new Error('pizzeria ID is required');
+    const data = {
+      name,
+      slogan
+    }
+    const pizzeriaRef = await db.collection('pizzeria').doc(id)
+    await pizzeriaRef.set(data);
+    const pizzeria = await pizzeriaRef.get();
+
+    response.json({
+      data: pizzeria.data()
+    });
+
+  } catch (error) {
+    response.status(500).send(error);
+  }
+});
+
+// get pizzeria data
+app.get('/pizzeria/:id', async (request, response) => {
+  try {
+    const pizzeriaId = request.params.id;
+    if (!pizzeriaId) throw new Error('pizzeria ID is required');
+    const pizzeria = await db.doc(`pizzeria/${pizzeriaId}`).get();
+    if (!pizzeria.exists) {
+      throw new Error('pizza doesnt exist.')
+    }
+    response.json({
+      id: pizzeria.id,
+      data: pizzeria.data()
+    });
+  } catch (error) {
+    response.status(500).send(error);
+  }
+});
+
+// add a new pizza to a given pizzeria
+app.post('/pizzeria/:pizzeriaId/pizzas', async (request, response) => {
+  try {
+    const { pizzeriaId } = request.params;
     const { name, desc, price } = request.body;
     const data = {
       name,
       desc,
       price
     }
-    const pizzaRef = await db.collection('pizzas').add(data);
-    const pizza = await pizzaRef.get();
+    const pizzariaRef = await db.doc(`pizzeria/${pizzeriaId}`);
+    await pizzariaRef.collection("pizzas").doc(name).set(data);
+    const pizza = await pizzariaRef.collection("pizzas").doc(name).get();
 
     response.json({
-      id: pizzaRef.id,
       data: pizza.data()
     });
 
@@ -35,11 +77,14 @@ app.post('/pizzas', async (request, response) => {
   }
 });
 
-app.get('/pizzas/:id', async (request, response) => {
+// fetch pizza data from a pizzeria
+app.get('/pizzeria/:pizzeriaId/pizzas/:pizzaId', async (request, response) => {
   try {
-    const pizzaId = request.params.id;
+    const { pizzaId, pizzeriaId } = request.params;
     if (!pizzaId) throw new Error('pizza ID is required');
-    const pizza = await db.collection('pizzas').doc(pizzaId).get();
+    if (!pizzeriaId) throw new Error('pizzeria ID is required');
+    const pizzariaRef = await db.doc(`pizzeria/${pizzeriaId}`);
+    const pizza = await pizzariaRef.collection('pizzas').doc(pizzaId).get();
     if (!pizza.exists) {
       throw new Error('pizza doesnt exist.')
     }
@@ -52,9 +97,13 @@ app.get('/pizzas/:id', async (request, response) => {
   }
 });
 
-app.get('/pizzas', async (request, response) => {
+// returns pizza collection from a given pizzeria
+app.get('/pizzeria/:pizzeriaId/pizzas', async (request, response) => {
   try {
-    const pizzaQuerySnapshot = await db.collection('pizzas').get();
+    const { pizzeriaId } = request.params;
+    if (!pizzeriaId) throw new Error('pizzeria ID is required');
+    const pizzariaRef = await db.doc(`pizzeria/${pizzeriaId}`);
+    const pizzaQuerySnapshot = await pizzariaRef.collection('pizzas').get();
     const pizzas: any[] = [];
     pizzaQuerySnapshot.forEach(
       (doc) => {
@@ -70,17 +119,21 @@ app.get('/pizzas', async (request, response) => {
   }
 });
 
-app.put('/pizzas/:id', async (request, response) => {
+// update a pizza
+app.put('/pizzeria/:pizzeriaId/pizzas/:pizzaId', async (request, response) => {
   try {
-    const pizzaId = request.params.id;
-    const price = request.body.price;
+    const { pizzeriaId, pizzaId } = request.params;
+    const { price, desc } = request.body;
 
     if (!pizzaId) throw new Error('id is blank');
     if (!price) throw new Error('price is required');
+    if (!desc) throw new Error('desc is required');
     const data = {
+      desc,
       price
     };
-    await db.collection('pizzas')
+    const pizzariaRef = await db.doc(`pizzeria/${pizzeriaId}`);
+    await pizzariaRef.collection('pizzas')
       .doc(pizzaId)
       .set(data, { merge: true });
     response.json({
@@ -92,11 +145,14 @@ app.put('/pizzas/:id', async (request, response) => {
   }
 });
 
-app.delete('/pizzas/:id', async (request, response) => {
+// delete a pizza
+app.delete('/pizzeria/:pizzeriaId/pizzas/:pizzaId', async (request, response) => {
   try {
-    const pizzaId = request.params.id;
+    const { pizzeriaId, pizzaId } = request.params;
     if (!pizzaId) throw new Error('id is blank');
-    await db.collection('pizzas')
+    if (!pizzeriaId) throw new Error('pizzeriaId is blank');
+    const pizzariaRef = await db.doc(`pizzeria/${pizzeriaId}`);
+    await pizzariaRef.collection('pizzas')
       .doc(pizzaId)
       .delete();
     response.json({
