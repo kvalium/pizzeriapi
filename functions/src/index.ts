@@ -16,18 +16,18 @@ export const webApi = functions.https.onRequest(main);
 
 app.post('/pizzas', async (request, response) => {
   try {
-    const { winner, losser, title } = request.body;
+    const { name, desc, price } = request.body;
     const data = {
-      winner,
-      losser,
-      title
+      name,
+      desc,
+      price
     }
-    const fightRef = await db.collection('pizzas').add(data);
-    const fight = await fightRef.get();
+    const pizzaRef = await db.collection('pizzas').add(data);
+    const pizza = await pizzaRef.get();
 
     response.json({
-      id: fightRef.id,
-      data: fight.data()
+      id: pizzaRef.id,
+      data: pizza.data()
     });
 
   } catch (error) {
@@ -37,15 +37,15 @@ app.post('/pizzas', async (request, response) => {
 
 app.get('/pizzas/:id', async (request, response) => {
   try {
-    const fightId = request.params.id;
-    if (!fightId) throw new Error('Fight ID is required');
-    const fight = await db.collection('pizzas').doc(fightId).get();
-    if (!fight.exists) {
-      throw new Error('Fight doesnt exist.')
+    const pizzaId = request.params.id;
+    if (!pizzaId) throw new Error('pizza ID is required');
+    const pizza = await db.collection('pizzas').doc(pizzaId).get();
+    if (!pizza.exists) {
+      throw new Error('pizza doesnt exist.')
     }
     response.json({
-      id: fight.id,
-      data: fight.data()
+      id: pizza.id,
+      data: pizza.data()
     });
   } catch (error) {
     response.status(500).send(error);
@@ -54,9 +54,9 @@ app.get('/pizzas/:id', async (request, response) => {
 
 app.get('/pizzas', async (request, response) => {
   try {
-    const fightQuerySnapshot = await db.collection('pizzas').get();
+    const pizzaQuerySnapshot = await db.collection('pizzas').get();
     const pizzas: any[] = [];
-    fightQuerySnapshot.forEach(
+    pizzaQuerySnapshot.forEach(
       (doc) => {
         pizzas.push({
           id: doc.id,
@@ -72,19 +72,19 @@ app.get('/pizzas', async (request, response) => {
 
 app.put('/pizzas/:id', async (request, response) => {
   try {
-    const fightId = request.params.id;
-    const title = request.body.title;
+    const pizzaId = request.params.id;
+    const price = request.body.price;
 
-    if (!fightId) throw new Error('id is blank');
-    if (!title) throw new Error('Title is required');
+    if (!pizzaId) throw new Error('id is blank');
+    if (!price) throw new Error('price is required');
     const data = {
-      title
+      price
     };
     await db.collection('pizzas')
-      .doc(fightId)
+      .doc(pizzaId)
       .set(data, { merge: true });
     response.json({
-      id: fightId,
+      id: pizzaId,
       data
     })
   } catch (error) {
@@ -94,13 +94,13 @@ app.put('/pizzas/:id', async (request, response) => {
 
 app.delete('/pizzas/:id', async (request, response) => {
   try {
-    const fightId = request.params.id;
-    if (!fightId) throw new Error('id is blank');
+    const pizzaId = request.params.id;
+    if (!pizzaId) throw new Error('id is blank');
     await db.collection('pizzas')
-      .doc(fightId)
+      .doc(pizzaId)
       .delete();
     response.json({
-      id: fightId,
+      id: pizzaId,
     })
   } catch (error) {
     response.status(500).send(error);
