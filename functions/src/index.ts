@@ -1,7 +1,9 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import * as express from 'express';
-import * as bodyParser from "body-parser";
+import * as bodyParser from 'body-parser';
+const cors = require('cors');
+
 
 admin.initializeApp(functions.config().firebase);
 const db = admin.firestore();
@@ -11,6 +13,7 @@ const main = express();
 
 main.use('/api/v1', app);
 main.use(bodyParser.json());
+main.use(cors());
 
 export const webApi = functions.https.onRequest(main);
 
